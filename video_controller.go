@@ -29,13 +29,6 @@ func (c *controller) FindAll() []entity.Video {
 }
 
 func (c *controller) Save(context *gin.Context) error {
-	// var video entity.Video
-	// err := context.ShouldBindJSON(&video)
-	// if err != nil {
-	// 	return err
-	// }
-	// c.service.Save(video)
-	// return nil
 	var video entity.Video
 	if err := context.ShouldBindJSON(&video); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

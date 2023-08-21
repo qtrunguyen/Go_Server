@@ -12,6 +12,7 @@ type VideoController interface {
 	FindAll() []entity.Video
 	Save(context *gin.Context) error
 	Delete(context *gin.Context) error
+	FindByTitle(context *gin.Context) error
 }
 
 type controller struct {
@@ -49,3 +50,15 @@ func (c *controller) Delete(context *gin.Context) error {
 	context.JSON(http.StatusOK, gin.H{"message": "Video deleted"})
 	return nil
 }
+
+func (c *controller) FindByTitle(context *gin.Context) error {
+	title := context.Param("title")
+	findVideo := c.service.FindByTitle(title)
+	if findVideo.Title == "" {
+		context.JSON(http.StatusNotFound, gin.H{"error": "Video not found"})
+		return nil
+	}
+	context.JSON(http.StatusOK, gin.H{"message": "Video found"})
+	return nil
+}
+

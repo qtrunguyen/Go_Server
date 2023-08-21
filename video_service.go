@@ -6,6 +6,7 @@ type VideoService interface {
 	Save(entity.Video) entity.Video
 	Delete(string) entity.Video
 	FindAll() []entity.Video
+	FindByTitle(string) entity.Video
 }
 
 type videoService struct {
@@ -14,6 +15,19 @@ type videoService struct {
 
 func New() VideoService {
 	return &videoService{}
+}
+
+func (service *videoService) FindByTitle(title string) entity.Video {
+	var findVideo entity.Video
+
+	for _, video := range service.videos {
+		if video.Title == title {
+			findVideo = video
+			break
+		}
+	}
+
+	return findVideo
 }
 
 func (service *videoService) Delete(title string) entity.Video {

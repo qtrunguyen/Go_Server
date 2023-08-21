@@ -40,12 +40,20 @@ func main() {
 		}
 	})
 
-	server.DELETE("/videos/:title", func(c *gin.Context) {
-		err := VideoController.Delete(c)
+	server.DELETE("/videos/:title", func(context *gin.Context) {
+		err := VideoController.Delete(context)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+	})
+
+	server.GET("/videos/:title", func(context *gin.Context) {
+		err := VideoController.FindByTitle(context)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 	})
 
 	server.Run(":8080")
 }
+

@@ -66,12 +66,12 @@ func setupRouter() *gin.Engine {
 	})
 
 	r.GET("/videos", func(context *gin.Context) {
-		videos, err := VideoController.FindAll()
+
+		err := VideoController.HandleVideoSearchAndPaginate(context)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		context.JSON(http.StatusOK, videos)
 	})
 
 	r.GET("/videos/:id", func(context *gin.Context) {

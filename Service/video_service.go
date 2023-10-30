@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-redis/redis/v8"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	entity "gitlab.com/pracmaticreviews/golang-gin-poc/Entity"
 )
@@ -21,6 +23,7 @@ type VideoService interface {
 	FindByID(string) (entity.Video, error)
 	VideoExists(string) bool
 	Update(*entity.Video, map[string]string) error
+	SearchAndPaginate(string, string, int) ([]entity.Video, error)
 }
 
 type videoService struct {
@@ -47,24 +50,6 @@ func (service *videoService) Save(newVideo entity.Video) (entity.Video, error) {
 		return entity.Video{}, err
 	}
 
-	// Cache the new video
-	cacheKey := "videos"
-	cachedVideos, err := service.redis.Get(ctx, cacheKey).Result()
-	if err == nil {
-		var videos []entity.Video
-		if err := json.Unmarshal([]byte(cachedVideos), &videos); err == nil {
-			// Add the new video to the cached data
-			videos = append(videos, newVideo)
-
-			// Store the updated data in the cache
-			jsonVideos, _ := json.Marshal(videos)
-			err = service.redis.Set(ctx, cacheKey, jsonVideos, 5*time.Minute).Err()
-			if err != nil {
-				fmt.Printf("Error updating cached videos in Redis: %v", err)
-			}
-		}
-	}
-
 	return newVideo, nil
 }
 
@@ -79,26 +64,10 @@ func (service *videoService) Delete(id string) error {
 	}
 
 	// Update the cache after successful deletion
-	cacheKey := "videos"
-	cachedVideos, err := service.redis.Get(ctx, cacheKey).Result()
-	if err == nil {
-		var videos []entity.Video
-		if err := json.Unmarshal([]byte(cachedVideos), &videos); err == nil {
-			// Remove the deleted video from the cached data
-			updatedVideos := make([]entity.Video, 0, len(videos))
-			for _, video := range videos {
-				if video.ID != id {
-					updatedVideos = append(updatedVideos, video)
-				}
-			}
-
-			// Store the updated data in the cache
-			jsonVideos, _ := json.Marshal(updatedVideos)
-			err = service.redis.Set(ctx, cacheKey, jsonVideos, 5*time.Minute).Err()
-			if err != nil {
-				fmt.Printf("Error updating cached videos in Redis: %v", err)
-			}
-		}
+	cacheKey := "video:" + id
+	err = service.redis.Del(ctx, cacheKey).Err()
+	if err != nil {
+		fmt.Printf("Error deleting cached video from Redis: %v", err)
 	}
 
 	return nil
@@ -121,37 +90,11 @@ func (service *videoService) Update(existingVideo *entity.Video, updateFields ma
 		return err
 	}
 
-	// Update the cache after successful update
-	cacheKey := "videos"
-	cachedVideos, err := service.redis.Get(ctx, cacheKey).Result()
-	if err == nil {
-		var videos []entity.Video
-		if err := json.Unmarshal([]byte(cachedVideos), &videos); err == nil {
-			// Find the video to update in the cached data
-			for i, video := range videos {
-				if video.ID == existingVideo.ID {
-					// Update the cached video with new values
-					for key, value := range updateFields {
-						switch key {
-						case "title":
-							videos[i].Title = value
-						case "description":
-							videos[i].Description = value
-						case "url":
-							videos[i].URL = value
-						}
-					}
-					break
-				}
-			}
-
-			// Store the updated data in the cache
-			jsonVideos, _ := json.Marshal(videos)
-			err = service.redis.Set(ctx, cacheKey, jsonVideos, 5*time.Minute).Err()
-			if err != nil {
-				fmt.Printf("Error updating cached videos in Redis: %v", err)
-			}
-		}
+	// Remove the cached individual video
+	cacheKey := "video:" + existingVideo.ID
+	err = service.redis.Del(ctx, cacheKey).Err()
+	if err != nil {
+		fmt.Printf("Error deleting cached video from Redis: %v", err)
 	}
 
 	return nil
@@ -161,7 +104,7 @@ func (service *videoService) FindAll() ([]entity.Video, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	//Check if data already in cache
+	//Try fetch from the cache first
 	cachedVideos, err := service.redis.Get(ctx, "videos").Result()
 	if err == nil {
 		var videos []entity.Video
@@ -170,6 +113,7 @@ func (service *videoService) FindAll() ([]entity.Video, error) {
 		}
 	}
 
+	//Retrieved from database
 	cursor, err := service.collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
@@ -238,4 +182,44 @@ func (service *videoService) VideoExists(id string) bool {
 	}
 
 	return count > 0
+}
+
+func (service *videoService) SearchAndPaginate(page string, query string, perPage int) ([]entity.Video, error) {
+	// Define the MongoDB query based on the query parameter
+	pageNum, err := strconv.Atoi(page)
+	if err != nil {
+		return nil, err
+	}
+
+	filter := bson.M{}
+	if query != "" {
+		filter["$or"] = []bson.M{
+			{"title": bson.M{"$regex": query, "$options": "i"}},
+			{"url": bson.M{"$regex": query, "$options": "i"}},
+		}
+	}
+
+	skip := (pageNum - 1) * perPage
+
+	findOptions := options.Find().SetSkip(int64(skip)).SetLimit(int64(perPage))
+	cur, err := service.collection.Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(context.TODO())
+
+	var videos []entity.Video
+	for cur.Next(context.TODO()) {
+		var video entity.Video
+		if err := cur.Decode(&video); err != nil {
+			return nil, err
+		}
+		videos = append(videos, video)
+	}
+
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+
+	return videos, nil
 }

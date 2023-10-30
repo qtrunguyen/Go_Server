@@ -14,6 +14,7 @@ type VideoController interface {
 	Delete(context *gin.Context) error
 	FindByID(context *gin.Context) error
 	Update(context *gin.Context) error
+	HandleVideoSearchAndPaginate(context *gin.Context) error
 }
 
 type controller struct {
@@ -104,5 +105,18 @@ func (c *controller) Update(context *gin.Context) error {
 
 	context.JSON(http.StatusOK, gin.H{"message": "Video updated"})
 
+	return nil
+}
+
+func (c *controller) HandleVideoSearchAndPaginate(context *gin.Context) error {
+	page := context.DefaultQuery("page", "1")
+	q := context.Query("q")
+
+	videos, err := c.service.SearchAndPaginate(page, q, 10) // Adjust perPage as needed
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return err
+	}
+	context.JSON(http.StatusOK, videos)
 	return nil
 }

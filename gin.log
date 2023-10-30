@@ -2,11 +2,11 @@
  - using env:	export GIN_MODE=release
  - using code:	gin.SetMode(gin.ReleaseMode)
 
-[GIN-debug] POST   /videos                   --> main.setupRouter.func1 (3 handlers)
-[GIN-debug] GET    /videos                   --> main.setupRouter.func2 (3 handlers)
-[GIN-debug] GET    /videos/:id               --> main.setupRouter.func3 (3 handlers)
-[GIN-debug] DELETE /videos/:id               --> main.setupRouter.func4 (3 handlers)
-[GIN-debug] PATCH  /videos/:id               --> main.setupRouter.func5 (3 handlers)
+[GIN-debug] POST   /videos                   --> main.setupRouter.func1 (4 handlers)
+[GIN-debug] GET    /videos                   --> main.setupRouter.func2 (4 handlers)
+[GIN-debug] GET    /videos/:id               --> main.setupRouter.func3 (4 handlers)
+[GIN-debug] DELETE /videos/:id               --> main.setupRouter.func4 (4 handlers)
+[GIN-debug] PATCH  /videos/:id               --> main.setupRouter.func5 (4 handlers)
 [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
 Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
 [GIN-debug] Listening and serving HTTP on :8080

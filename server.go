@@ -11,9 +11,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	controller "gitlab.com/pracmaticreviews/golang-gin-poc/Controller"
-	middlewares "gitlab.com/pracmaticreviews/golang-gin-poc/Middlewares"
-	service "gitlab.com/pracmaticreviews/golang-gin-poc/Service"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	controller "videoAPI/Controller"
+	middlewares "videoAPI/Middlewares"
+	service "videoAPI/Service"
+	_ "videoAPI/docs"
 )
 
 var (
@@ -56,13 +60,23 @@ func setupRedis() (*redis.Client, error) {
 func setupRouter() *gin.Engine {
 	r := gin.New()
 
-	r.Use(gin.Recovery(), middlewares.Logger(), middlewares.BasicAuth())
+	r.Use(gin.Recovery(), middlewares.Logger()) // , middlewares.BasicAuth()
+
+	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	r.POST("/videos", func(context *gin.Context) {
 		err := VideoController.Save(context)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
+	})
+
+	r.POST("/signup", func(context *gin.Context) {
+		VideoController.SignUp(context)
+	})
+
+	r.POST("/login", func(context *gin.Context) {
+		VideoController.LogIn(context)
 	})
 
 	r.GET("/videos", func(context *gin.Context) {
@@ -98,6 +112,7 @@ func setupRouter() *gin.Engine {
 	return r
 }
 
+// @title  Video API
 func main() {
 
 	setupLogOutput()
@@ -110,7 +125,7 @@ func main() {
 
 	setupRedis()
 
-	videoService = service.NewMongoVideoService(client, "trungdb", "trungcl", redisClient)
+	videoService = service.NewMongoVideoService(client, "trungdb", "trungcl", "usercl", redisClient)
 	VideoController = controller.New(videoService)
 
 	server := setupRouter()

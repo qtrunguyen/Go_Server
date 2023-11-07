@@ -1,0 +1,228 @@
+definitions:
+  controller.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  controller.SignUpResponse:
+    properties:
+      message:
+        type: string
+      token:
+        type: string
+    type: object
+  controller.SuccessResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  entity.Video:
+    properties:
+      description:
+        maxLength: 20
+        type: string
+      id:
+        type: string
+      title:
+        maxLength: 10
+        minLength: 2
+        type: string
+      url:
+        type: string
+    required:
+    - url
+    type: object
+info:
+  contact: {}
+  title: Video API
+paths:
+  /login:
+    post:
+      description: Log in a user
+      operationId: log-in
+      parameters:
+      - description: User data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.SignUpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Log in a user
+  /signup:
+    post:
+      description: Sign up a new user
+      operationId: sign-up
+      parameters:
+      - description: User data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Sign up a new user
+  /videos:
+    get:
+      description: Search and paginate videos
+      operationId: search-and-paginate
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: string
+      - description: Search query
+        in: query
+        name: q
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Video'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Search and paginate videos
+    post:
+      consumes:
+      - application/json
+      description: Save a video to the system
+      operationId: save-video
+      parameters:
+      - description: Video to save
+        in: body
+        name: video
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Video'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Save a video
+  /videos/{id}:
+    delete:
+      description: Delete a video by its ID
+      operationId: delete-video
+      parameters:
+      - description: Video ID to delete
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.SuccessResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Delete a video by ID
+    get:
+      description: Find a video by its ID
+      operationId: find-video
+      parameters:
+      - description: Video ID to find
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Video'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Find a video by ID
+    put:
+      description: Update a video by its ID
+      operationId: update-video
+      parameters:
+      - description: Video ID to update
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: updateFields
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Update a video by ID
+swagger: "2.0"

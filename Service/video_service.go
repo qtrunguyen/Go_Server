@@ -12,8 +12,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 
-	entity "gitlab.com/pracmaticreviews/golang-gin-poc/Entity"
+	entity "videoAPI/Entity"
 )
 
 type VideoService interface {
@@ -24,20 +25,32 @@ type VideoService interface {
 	VideoExists(string) bool
 	Update(*entity.Video, map[string]string) error
 	SearchAndPaginate(string, string, int) ([]entity.Video, error)
+
+	//Authorization
+	CreateUser(email string, password string) error
+	GetUserByEmail(email string) (User, error)
 }
 
 type videoService struct {
-	client     *mongo.Client
-	collection *mongo.Collection
-	redis      *redis.Client
+	client          *mongo.Client
+	videoCollection *mongo.Collection
+	userCollection  *mongo.Collection
+	redis           *redis.Client
 }
 
-func NewMongoVideoService(client *mongo.Client, dbName, collectionName string, redisClient *redis.Client) VideoService {
-	collection := client.Database(dbName).Collection(collectionName)
+type User struct {
+	Email    string `bson:"email"`
+	Password string `bson:"password"`
+}
+
+func NewMongoVideoService(client *mongo.Client, dbName, videoCollectionName string, userCollectionName string, redisClient *redis.Client) VideoService {
+	videoCollection := client.Database(dbName).Collection(videoCollectionName)
+	userCollection := client.Database(dbName).Collection(userCollectionName)
 	return &videoService{
-		client:     client,
-		collection: collection,
-		redis:      redisClient,
+		client:          client,
+		videoCollection: videoCollection,
+		userCollection:  userCollection,
+		redis:           redisClient,
 	}
 }
 
@@ -45,7 +58,7 @@ func (service *videoService) Save(newVideo entity.Video) (entity.Video, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := service.collection.InsertOne(ctx, newVideo)
+	_, err := service.videoCollection.InsertOne(ctx, newVideo)
 	if err != nil {
 		return entity.Video{}, err
 	}
@@ -58,7 +71,7 @@ func (service *videoService) Delete(id string) error {
 	defer cancel()
 
 	filter := bson.M{"id": id}
-	_, err := service.collection.DeleteOne(ctx, filter)
+	_, err := service.videoCollection.DeleteOne(ctx, filter)
 	if err != nil {
 		return err
 	}
@@ -85,7 +98,7 @@ func (service *videoService) Update(existingVideo *entity.Video, updateFields ma
 	filter := bson.M{"id": existingVideo.ID}
 	updateDoc := bson.M{"$set": update}
 
-	_, err := service.collection.UpdateOne(ctx, filter, updateDoc)
+	_, err := service.videoCollection.UpdateOne(ctx, filter, updateDoc)
 	if err != nil {
 		return err
 	}
@@ -114,7 +127,7 @@ func (service *videoService) FindAll() ([]entity.Video, error) {
 	}
 
 	//Retrieved from database
-	cursor, err := service.collection.Find(ctx, bson.M{})
+	cursor, err := service.videoCollection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +166,7 @@ func (service *videoService) FindByID(id string) (entity.Video, error) {
 	//If not in the cache, retrieve from database
 	filter := bson.M{"id": id}
 	var video entity.Video
-	if err := service.collection.FindOne(ctx, filter).Decode(&video); err != nil {
+	if err := service.videoCollection.FindOne(ctx, filter).Decode(&video); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return entity.Video{}, errors.New("Video not found")
 		}
@@ -175,7 +188,7 @@ func (service *videoService) VideoExists(id string) bool {
 	defer cancel()
 
 	filter := bson.M{"id": id}
-	count, err := service.collection.CountDocuments(ctx, filter)
+	count, err := service.videoCollection.CountDocuments(ctx, filter)
 	if err != nil {
 		fmt.Printf("Error checking if video exists: %v", err)
 		return false
@@ -202,7 +215,7 @@ func (service *videoService) SearchAndPaginate(page string, query string, perPag
 	skip := (pageNum - 1) * perPage
 
 	findOptions := options.Find().SetSkip(int64(skip)).SetLimit(int64(perPage))
-	cur, err := service.collection.Find(context.TODO(), filter, findOptions)
+	cur, err := service.videoCollection.Find(context.TODO(), filter, findOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -222,4 +235,33 @@ func (service *videoService) SearchAndPaginate(page string, query string, perPag
 	}
 
 	return videos, nil
+}
+
+func (service *videoService) CreateUser(email string, password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err != nil {
+		return err
+	}
+
+	user := bson.M{
+		"email":    email,
+		"password": hash,
+	}
+
+	_, err = service.userCollection.InsertOne(context.TODO(), user)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *videoService) GetUserByEmail(email string) (User, error) {
+	var user User
+	filter := bson.M{"email": email}
+	err := service.userCollection.FindOne(context.TODO(), filter).Decode(&user)
+	if err != nil {
+		return User{}, err
+	}
+	return user, nil
 }

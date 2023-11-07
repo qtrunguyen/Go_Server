@@ -30,15 +30,11 @@ func TestSetupRedis(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	// Create a test server with your router at the beginning of the test suite
 	router = setupRouter()
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 
-	// Run the tests and exit
 	exitCode := m.Run()
-
-	// Optionally, perform cleanup after all tests if needed
 
 	os.Exit(exitCode)
 }

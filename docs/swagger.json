@@ -176,6 +176,33 @@
                 }
             }
         },
+        "/videos/all": {
+            "get": {
+                "description": "Get all videos in DB",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get all videos",
+                "operationId": "find-all-videos",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Video"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/controller.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/videos/{id}": {
             "get": {
                 "description": "Find a video by its ID",

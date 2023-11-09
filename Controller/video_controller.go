@@ -14,7 +14,7 @@ import (
 )
 
 type VideoController interface {
-	FindAll() ([]entity.Video, error)
+	FindAll(context *gin.Context) error
 	Save(context *gin.Context) error
 	Delete(context *gin.Context) error
 	FindByID(context *gin.Context) error
@@ -49,16 +49,26 @@ func New(newService service.VideoService) VideoController {
 	}
 }
 
-func (c *controller) FindAll() ([]entity.Video, error) {
-	videos, err := c.service.FindAll()
+// @Summary Get all videos
+// @Description Get all videos in DB
+// @ID find-all-videos
+// @Produce  json
+// @Success 200 {array} entity.Video
+// @Failure 400 {object} ErrorResponse
+// @Router /videos/all [get]
+func (c *controller) FindAll(context *gin.Context) error {
+	findVideos, err := c.service.FindAll()
+
 	if err != nil {
-		return nil, err
+		context.JSON(http.StatusNotFound, ErrorResponse{"Videos not found"})
+		return err
 	}
 
-	return videos, nil
+	context.JSON(http.StatusOK, findVideos)
+
+	return nil
 }
 
-// Save saves a video.
 // @Summary Save a video
 // @Description Save a video to the system
 // @ID save-video

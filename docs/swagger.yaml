@@ -225,4 +225,22 @@ paths:
           schema:
             $ref: '#/definitions/controller.ErrorResponse'
       summary: Update a video by ID
+  /videos/all:
+    get:
+      description: Get all videos in DB
+      operationId: find-all-videos
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Video'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: Get all videos
 swagger: "2.0"

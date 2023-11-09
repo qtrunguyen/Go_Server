@@ -88,6 +88,14 @@ func setupRouter() *gin.Engine {
 		}
 	})
 
+	r.GET("/videos/all", func(context *gin.Context) {
+		err := VideoController.FindAll(context)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	})
+
 	r.GET("/videos/:id", func(context *gin.Context) {
 		err := VideoController.FindByID(context)
 		if err != nil {

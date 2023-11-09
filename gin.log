@@ -7,21 +7,17 @@
 [GIN-debug] POST   /signup                   --> main.setupRouter.func2 (3 handlers)
 [GIN-debug] POST   /login                    --> main.setupRouter.func3 (3 handlers)
 [GIN-debug] GET    /videos                   --> main.setupRouter.func4 (3 handlers)
-[GIN-debug] GET    /videos/:id               --> main.setupRouter.func5 (3 handlers)
-[GIN-debug] DELETE /videos/:id               --> main.setupRouter.func6 (3 handlers)
-[GIN-debug] PATCH  /videos/:id               --> main.setupRouter.func7 (3 handlers)
+[GIN-debug] GET    /videos/all               --> main.setupRouter.func5 (3 handlers)
+[GIN-debug] GET    /videos/:id               --> main.setupRouter.func6 (3 handlers)
+[GIN-debug] DELETE /videos/:id               --> main.setupRouter.func7 (3 handlers)
+[GIN-debug] PATCH  /videos/:id               --> main.setupRouter.func8 (3 handlers)
 [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
 Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
 [GIN-debug] Listening and serving HTTP on :8080
-::1 - [06 Nov 23 18:29 +07] GET /docs/index.html 200 327.7µs 
-::1 - [06 Nov 23 18:29 +07] GET /docs/swagger-ui.css 200 451.8µs 
-::1 - [06 Nov 23 18:29 +07] GET /docs/swagger-ui-bundle.js 200 7.7703ms 
-::1 - [06 Nov 23 18:29 +07] GET /docs/swagger-ui-standalone-preset.js 200 7.9768ms 
-::1 - [06 Nov 23 18:29 +07] GET /docs/doc.json 200 627.8µs 
-::1 - [06 Nov 23 18:29 +07] GET /docs/favicon-32x32.png 200 0s 
-::1 - [06 Nov 23 18:29 +07] GET /videos/1 200 305.4598ms 
-::1 - [06 Nov 23 18:29 +07] GET /videos/3 200 1.7441ms 
-::1 - [06 Nov 23 18:30 +07] GET /videos/4 200 1.9009ms 
-::1 - [06 Nov 23 18:30 +07] GET /videos/5 200 1.5545ms 
-::1 - [06 Nov 23 18:30 +07] GET /videos/6 200 1.0517ms 
-::1 - [06 Nov 23 18:30 +07] GET /videos/7 404 750.6µs 
+::1 - [09 Nov 23 11:11 +07] GET /docs/index.html 200 0s 
+::1 - [09 Nov 23 11:11 +07] GET /docs/swagger-ui.css 200 1.3603ms 
+::1 - [09 Nov 23 11:11 +07] GET /docs/swagger-ui-standalone-preset.js 200 1.642ms 
+::1 - [09 Nov 23 11:11 +07] GET /docs/swagger-ui-bundle.js 200 3.5955ms 
+::1 - [09 Nov 23 11:11 +07] GET /docs/doc.json 200 867.7µs 
+::1 - [09 Nov 23 11:11 +07] GET /docs/favicon-32x32.png 200 0s 
+::1 - [09 Nov 23 11:11 +07] GET /videos/all 200 320.2455ms 

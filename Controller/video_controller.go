@@ -22,8 +22,8 @@ type VideoController interface {
 	HandleVideoSearchAndPaginate(context *gin.Context) error
 
 	//Authorization
-	SignUp(context *gin.Context)
-	LogIn(context *gin.Context)
+	SignUp(context *gin.Context) error
+	LogIn(context *gin.Context) error
 }
 
 type controller struct {
@@ -209,24 +209,23 @@ func (c *controller) HandleVideoSearchAndPaginate(context *gin.Context) error {
 // @Failure 400 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
 // @Router /signup [post]
-func (c *controller) SignUp(context *gin.Context) {
-	var body struct {
-		email    string
-		password string
+func (c *controller) SignUp(context *gin.Context) error {
+	var user entity.User
+
+	if err := context.ShouldBindJSON(&user); err != nil {
+		context.JSON(http.StatusBadRequest, ErrorResponse{err.Error()})
+		return err
 	}
 
-	if context.Bind(&body) != nil {
-		context.JSON(http.StatusBadRequest, ErrorResponse{"Failed to load body"})
-		return
-	}
-
-	err := c.service.CreateUser(body.email, body.password)
+	err := c.service.CreateUser(user)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, ErrorResponse{"Failed to create user"})
-		return
+		return err
 	}
 
 	context.JSON(http.StatusOK, SuccessResponse{"User created successfully"})
+
+	return nil
 }
 
 // @Summary Log in a user
@@ -240,36 +239,35 @@ func (c *controller) SignUp(context *gin.Context) {
 // @Failure 401 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
 // @Router /login [post]
-func (c *controller) LogIn(context *gin.Context) {
-	var body struct {
-		email    string
-		password string
+func (c *controller) LogIn(context *gin.Context) error {
+	var login_user entity.User
+
+	if err := context.ShouldBindJSON(&login_user); err != nil {
+		context.JSON(http.StatusBadRequest, ErrorResponse{err.Error()})
+		return err
 	}
 
-	if context.Bind(&body) != nil {
-		context.JSON(http.StatusBadRequest, ErrorResponse{"Failed to load body"})
-		return
-	}
-
-	user, err := c.service.GetUserByEmail(body.email)
+	user, err := c.service.GetUserByEmail(login_user.Email)
 	if err != nil {
 		context.JSON(http.StatusUnauthorized, ErrorResponse{"Invalid email"})
-		return
+		return err
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(login_user.Password))
 	if err != nil {
 		context.JSON(http.StatusUnauthorized, ErrorResponse{"Invalid password"})
-		return
+		return err
 	}
 
 	token, err := generateJWTToken(user.Email)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, ErrorResponse{"Failed to generate JWT token"})
-		return
+		return err
 	}
 
 	context.JSON(http.StatusOK, SignUpResponse{"Login successful", token})
+
+	return nil
 }
 
 func generateJWTToken(email string) (string, error) {

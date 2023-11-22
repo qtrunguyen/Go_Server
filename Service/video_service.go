@@ -27,7 +27,7 @@ type VideoService interface {
 	SearchAndPaginate(string, string, int) ([]entity.Video, error)
 
 	//Authorization
-	CreateUser(email string, password string) error
+	CreateUser(user entity.User) error
 	GetUserByEmail(email string) (User, error)
 }
 
@@ -39,8 +39,8 @@ type videoService struct {
 }
 
 type User struct {
-	Email    string `bson:"email"`
-	Password string `bson:"password"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func NewMongoVideoService(client *mongo.Client, dbName, videoCollectionName string, userCollectionName string, redisClient *redis.Client) VideoService {
@@ -237,18 +237,23 @@ func (service *videoService) SearchAndPaginate(page string, query string, perPag
 	return videos, nil
 }
 
-func (service *videoService) CreateUser(email string, password string) error {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+func (service *videoService) CreateUser(user entity.User) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
+
+	hashUser := entity.User{
+		Email:    user.Email,
+		Password: string(hash),
+	}
+
 	if err != nil {
 		return err
 	}
 
-	user := bson.M{
-		"email":    email,
-		"password": hash,
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	_, err = service.userCollection.InsertOne(context.TODO(), user)
+	_, err = service.userCollection.InsertOne(ctx, hashUser)
+
 	if err != nil {
 		return err
 	}

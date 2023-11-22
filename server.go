@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	//"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -65,6 +66,7 @@ func setupRouter() *gin.Engine {
 	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	r.POST("/videos", func(context *gin.Context) {
+
 		err := VideoController.Save(context)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
